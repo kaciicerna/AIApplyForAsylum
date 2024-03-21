@@ -1,0 +1,11 @@
+"pronásledování","perzekuce","pronásledovat","pronásledování","násilí","násilný","násilí","útok","útočit",
+"útok","bezpečnost","bezpečný","nebezpečí","hrozba","hrozit","hrozba","mezinárodní ochrana","mezinárodní",
+"ochrana","terč","extremismus","extremista","extremistický","politický aktivismus","aktivista","aktivismus",
+"politický názor","politický","názor","teroristická skupina","terorista","terorismus","novinářská práce",
+"novinář","novinářský","sexuální orientace","sexuální","orientace","sexuální identita","sexuální","identita",
+"náboženské přesvědčení","náboženský","přesvědčení","rodinné pronásledování","rodinný","pronásledování",
+"genderová identita","genderový","identita","komunita LGBTQ+","komunita","LGBTQ","politické názory","politický",
+"názor","náboženská menšina","náboženský","menšina","lidská práva","lidský","práva","občanská válka","občanský",
+"válka","vládní pronásledování","vládní","pronásledování","obhajoba demokracie","obhájce","demokracie","korupce",
+"korupce","porušování lidských práv","porušování","lidských","práv","domácí násilí","domácí","násilí",
+"genderové role","genderový"

@@ -1,0 +1,5 @@
+"pronásledování","sexuální orientace","útěk","násilí","azyl","politické názory","aktivista","politický systém",
+"mezinárodní ochrana","domácí násilí","LGBT","komunita","extremistické skupiny","terč","náboženská menšina",
+"náboženství","novinář","korupce","lidská práva","rodina","bezpečnost","diskriminace","náboženské přesvědčení",
+"politická opozice","aktivismus","aktivitka"
+

@@ -1,0 +1,8 @@
+"pronásledování","sexuální orientace","útěk","násilí","politické názory","aktivista","politický systém",
+"mezinárodní ochrana","domácí násilí","LGBT","komunita","extremistické skupiny","terč","náboženská menšina",
+"náboženství","novinář","korupce","lidská práva","rodina","bezpečnost","diskriminace","náboženské přesvědčení",
+"politická opozice","aktivismus","ženská práva","rovnost","vzdělávání","Taliban","útoky","výhrůžky",
+"fyzická napadení","Afghánistán","menšina","Hazárové","šíitský muslim","cílené útoky","zneužívání","tlumočník",
+"zahraniční","silami","porušování","náboženská","diskriminace","politická aktivita","odpor","režimu",
+"demonstrace","násilí na základě pohlaví","společenský tlak","genderové role","náboženské","militantní",
+"homosexuál","obtěžování","právní důsledky"
