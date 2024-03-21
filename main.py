@@ -33,9 +33,12 @@ def zjisti_duvody_syrie(soubor_zadosti, soubor_duvodu, soubor_stopwords):
                 shodna_slova = set()
                 for slovo_zadosti in slova_zadosti:
                     for slovo_duvodu in slova_duvody:
-                        if slovo_zadosti.startswith(slovo_duvodu) and slovo_zadosti.lower() not in stopwords:
+                        if slovo_zadosti.startswith(slovo_duvodu):
                             shodna_slova.add(slovo_zadosti)
                             break
+                
+                # Odstranění stopwords z výsledků
+                shodna_slova = shodna_slova - stopwords
                 
                 if shodna_slova:
                     print('"{}" = {}'.format(zkratka.upper(), list(shodna_slova)))
