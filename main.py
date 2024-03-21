@@ -1,6 +1,7 @@
 import csv
 import re
 import json
+import numpy as np
 
 def nacti_csv_soubor(nazev_souboru):
     data = []
@@ -12,11 +13,29 @@ def nacti_csv_soubor(nazev_souboru):
 
 def nacti_duvody(soubor_duvodu):
     with open(soubor_duvodu, 'r', encoding='utf-8') as file:
-        return set(file.read().lower().split())
+        return set(file.read().lower().split(','))
 
 def nacti_stopwords(soubor_stopwords):
     with open(soubor_stopwords, 'r', encoding='utf-8') as file:
         return set(json.load(file))
+
+def levenshtein_distance(s1, s2):
+    # Create a matrix to store distances
+    distances = np.zeros((len(s1) + 1, len(s2) + 1))
+
+    # Initialize the first row and column
+    for i in range(len(s1) + 1):
+        distances[i][0] = i
+    for j in range(len(s2) + 1):
+        distances[0][j] = j
+
+    # Calculate distances
+    for i in range(1, len(s1) + 1):
+        for j in range(1, len(s2) + 1):
+            cost = 0 if s1[i - 1] == s2[j - 1] else 1
+            distances[i][j] = min(distances[i - 1][j] + 1, distances[i][j - 1] + 1, distances[i - 1][j - 1] + cost)
+
+    return distances[len(s1)][len(s2)]
 
 def zjisti_duvody_syrie(soubor_zadosti, soubor_duvodu, soubor_stopwords):
     stopwords = nacti_stopwords(soubor_stopwords)
@@ -29,16 +48,12 @@ def zjisti_duvody_syrie(soubor_zadosti, soubor_duvodu, soubor_stopwords):
                 zkratka = row['zkratka'].lower()
                 slova_zadosti = re.findall(r'\b\w+\b', row['duvod_o_azyl'].lower())
                 
-                # Hledáme shodná slova nebo kořeny slov z Sýrie.txt ve slovech žádosti
+                # Find similar words from Sýrie.txt in the words from the application
                 shodna_slova = set()
                 for slovo_zadosti in slova_zadosti:
-                    for slovo_duvodu in slova_duvody:
-                        if slovo_zadosti.startswith(slovo_duvodu):
-                            shodna_slova.add(slovo_zadosti)
-                            break
-                
-                # Odstranění stopwords z výsledků
-                shodna_slova = shodna_slova - stopwords
+                    min_distance = min(levenshtein_distance(slovo_zadosti, slovo_duvodu) for slovo_duvodu in slova_duvody)
+                    if min_distance <= 2 and slovo_zadosti not in stopwords:
+                        shodna_slova.add(slovo_zadosti)
                 
                 if shodna_slova:
                     print('"{}" = {}'.format(zkratka.upper(), list(shodna_slova)))
