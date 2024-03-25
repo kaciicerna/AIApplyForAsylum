@@ -1,9 +1,10 @@
 "islámská extremisté","islámský extremisté","učitel","učitelka","výhružky","výhružka","vzdělání","extremistické ideologie","nebezpečí smrti","bombový útok",
 "bombový útoky","ozbrojený konflikt","ztráta blízkých přátel a rodinných příslušníků","politické aktivity","protesty","lidská práva",
-"násilí","perzekuce","sexuální orientace","napadení","sexuální napadení","novinářské působení","opoziční hnutí",
-"zatčen","genderový projev","genderová identita","ozbrojené skupiny","mučení","svědek násilí","strach o život",
+"násilí","perzekuce","sexuální orientace","napadení","sexuální napadení","novinářské působení","opoziční hnutí","bombové útoky",
+"zatčen","genderový projev","genderová identita","ozbrojené skupiny","mučení","svědek násilí","strach o život","vládními silami",
 "násilí na ženách","čelit smrti","terč násilí","náboženství","zatčení","věznění","demonstrace","svědek","občanská válka",
-"politická perzekuce","aktivistka","aktivista","teroristické skupiny","zabit vládními silami",
+"politická perzekuce","aktivistka","aktivista","teroristické skupiny","zabit vládními silami","ozbrojených skupin","politickému",
 "menšinové náboženství","extrémistická","extremismus","politická aktivita","náboženská menšina","nenásilný aktivismus",
 "strana ISIS","ISIS","pronásledování vlády","LGBTQ+","LGBTQ","protesty","demokracie","novinářská práce","stejnopohlavní",
-"stejnopohlavní sňatek","2015","2016","dohodnutý sňatek","nemuslimský","práva žen","rovnost žen","žena se ženou","pronásledování","bombardování","ozbrojenému konfliktu"
+"stejnopohlavní sňatek","2015","2016","dohodnutý sňatek","nemuslimský","práva žen","rovnost žen","žena se ženou","pronásledování","bombardování","ozbrojenému konfliktu",
+"vojenských a ozbrojených skupin","perzekuci","ohrožení osobní bezpečnosti"
