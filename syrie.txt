@@ -7,4 +7,12 @@
 "menšinové náboženství","extrémistická","extremismus","politická aktivita","náboženská menšina","nenásilný aktivismus",
 "strana ISIS","ISIS","pronásledování vlády","LGBTQ+","LGBTQ","protesty","demokracie","novinářská práce","stejnopohlavní",
 "stejnopohlavní sňatek","2015","2016","dohodnutý sňatek","nemuslimský","práva žen","rovnost žen","žena se ženou","pronásledování","bombardování","ozbrojenému konfliktu",
-"vojenských a ozbrojených skupin","perzekuci","ohrožení osobní bezpečnosti"
+"vojenských a ozbrojených skupin","perzekuci","ohrožení osobní bezpečnosti",
+"islámská extremisté","islámský extremisté","učitel","učitelka","pedagog","vyučující","výhružky","hrozby","vyhrožování","výhružka","hrozba","vyhrožování",
+"vzdělání","extremistické ideologie","radikální přesvědčení","extrémismus","nebezpečí smrti","riziko úmrtí","ohrožení života","bombový útok","bomba","výbuch",
+"bombový útoky","bombové útoky","teroristické útoky","ozbrojený konflikt","válečný konflikt","ozbrojené střety","ztráta blízkých přátel a rodinných příslušníků",
+"ztráta blízkých","úmrtí rodiny","politické aktivity","politické angažmá","politické činnosti","protesty","demonstrace","manifestace","lidská práva","práva jednotlivce",
+"občanská práva","pronásledování vlády","politická perzekuce","represálie","LGBTQ+","sexuální menšiny","queer komunita","LGBTQ","sexuální menšiny","queer komunita",
+"stejnopohlavní","homosexuální","gay","stejnopohlavní sňatek","manželství pro všechny","homosexuální manželství","nemuslimský","nevěřící","křesťanský","práva žen",
+"ženská práva","genderová rovnost","rovnost žen","genderová rovnost","feminismus","žena se ženou","lesbická","homosexuální","pronásledování","perzekuce","utlačování",
+"ohrožení osobní bezpečnosti","riziko útoků","nebezpečí pro život","vojenských a ozbrojených skupin","ozbrojené frakce","ozbrojené skupiny"

@@ -8,4 +8,11 @@
 "názor","náboženská menšina","náboženský","menšina","lidská práva","lidský","práva","občanská válka","občanský",
 "válka","vládní pronásledování","vládní","pronásledování","obhajoba demokracie","obhájce","demokracie","korupce",
 "korupce","porušování lidských práv","porušování","lidských","práv","domácí násilí","domácí","násilí",
-"genderové role","genderový"
+"genderové role","genderový", "pronásledování","perzekuce","pronásledovat","násilí","násilný","útok","útočit",
+"bezpečnost","bezpečný","nebezpečí","hrozba","hrozit","mezinárodní ochrana","terč","extremismus","extremista",
+"extremistický","politický aktivismus","aktivista","aktivismus","politický názor","názor","teroristická skupina",
+"terorista","terorismus","novinářská práce","novinář","novinářský","sexuální orientace","orientace","sexuální identita",
+"identita","náboženské přesvědčení","přesvědčení","rodinné pronásledování","rodinný","genderová identita","identita",
+"komunita LGBTQ+","LGBTQ","politické názory","názor","náboženská menšina","menšina","lidská práva","práva","občanská válka",
+"občanský","vládní pronásledování","vládní","obhajoba demokracie","obhájce","demokracie","korupce","porušování lidských práv",
+"porušování","domácí násilí","domácí","genderové role"

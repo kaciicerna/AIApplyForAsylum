@@ -1,5 +1,10 @@
-"pronásledování","sexuální orientace","útěk","násilí","azyl","politické názory","aktivista","politický systém",
-"mezinárodní ochrana","domácí násilí","LGBT","komunita","extremistické skupiny","terč","náboženská menšina",
-"náboženství","novinář","korupce","lidská práva","rodina","bezpečnost","diskriminace","náboženské přesvědčení",
-"politická opozice","aktivismus","aktivitka"
+"pronásledování","sexuální orientace","útěk","násilí","azyl","politické názory","aktivista","politický systém","mezinárodní ochrana",
+"domácí násilí","LGBT","komunita","extremistické skupiny","terč","náboženská menšina","náboženství","novinář","korupce","lidská práva",
+"rodina","bezpečnost","diskriminace","náboženské přesvědčení","politická opozice","aktivismus","aktivistka","pronásledování","pronásledovat",
+"perzekuce","pronásledování","útočit","terorista","terorismus","násilí","násilný","hrozba","hrozit","mezinárodní ochrana","politický aktivismus",
+"aktivismus","politický názor","politický","názor","teroristická skupina","novinářská práce","novinářský","sexuální orientace","sexuální","orientace",
+"sexuální identita","sexuální","identita","náboženské přesvědčení","náboženský","přesvědčení","rodinné pronásledování","rodinný","pronásledování",
+"genderová identita","genderový","identita","komunita LGBTQ+","komunita","LGBTQ","politické názory","politický","názor","náboženská menšina",
+"náboženský","menšina","lidská práva","lidský","práva","občanská válka","občanský","válka","vládní pronásledování","vládní","pronásledování",
+"obhajoba demokracie","obhájce","demokracie","korupce","porušování lidských práv","porušování","lidských","práv","domácí násilí","domácí","násilí"
 
