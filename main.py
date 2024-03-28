@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
+from sklearn.decomposition import LatentDirichletAllocation
 
 def load_csv_file(file_name):
     data = []
@@ -39,6 +40,22 @@ def levenshtein_distance(s1, s2):
 
     return distances[len(s1)][len(s2)]
 
+# Funkce pro vyhodnocení úspěšnosti klasifikace
+def evaluate_classification(y_test, y_pred):
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
+
+# Tématické modelování s použitím Latent Dirichlet Allocation
+def apply_lda(X_train_vec, num_topics=5):
+    lda = LatentDirichletAllocation(n_components=num_topics, random_state=42)
+    lda.fit(X_train_vec)
+    return lda
+
+# Funkce pro přiřazení tématických prvků ke každé žádosti
+def assign_topics(lda_model, X_test_vec):
+    return lda_model.transform(X_test_vec)
+
+# Evaluace úspěšnosti klasifikace
 def evaluate_application(y_test, y_pred, abbreviations_test, application_file_ano, application_file_ne, reason_file, matching_counts):
     with open(application_file_ano, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
@@ -71,15 +88,15 @@ def evaluate_application(y_test, y_pred, abbreviations_test, application_file_an
     
     return success_rates
 
-def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file):
+# Funkce pro zpracování a vyhodnocení žádostí s využitím tématického modelování
+def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file):
     stopwords = load_stopwords(stopwords_file)
     reasons = load_reasons(reason_file)
-    X_train = []
-    y_train = []
-    abbreviations_train = []
-    matching_counts = {}
-    similar_words = {}  # Dictionary to store similar words
     
+    X_train, y_train, X_test, y_test, abbreviations_train, abbreviations_test = [], [], [], [], [], []
+    matching_counts, similar_words = {}, {}
+    
+    # Načtení a zpracování trénovacích dat
     with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
@@ -99,9 +116,7 @@ def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, r
                             similar.add(reason)
                 
                 if matching_words:
-                    # Include additional context from the application
-                    application_context = row['duvod_o_azyl'] + " " + row['dalsi_informace']
-                    X_train.append(application_context)
+                    X_train.append(' '.join(matching_words))
                     y_train.append(1)  # Positive case
                 else:
                     X_train.append(' ')
@@ -110,14 +125,9 @@ def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, r
                 matching_counts[abbreviation] = len(matching_words)  # Store the count of matching words
                 similar_words[abbreviation] = similar  # Store similar words
     
-    vectorizer = CountVectorizer()
-    X_train_vec = vectorizer.fit_transform(X_train)
-    
+    # Načtení a zpracování testovacích dat
     with open(test_data_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
-        X_test = []
-        y_test = []
-        abbreviations_test = []
         for row in csvreader:
             if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
                 abbreviation = row['zkratka'].lower()
@@ -135,30 +145,57 @@ def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, r
                             similar.add(reason)
                 
                 if matching_words:
-                    # Include additional context from the application
-                    application_context = row['duvod_o_azyl'] + " " + row['dalsi_informace']
-                    X_test.append(application_context)
+                    X_test.append(' '.join(matching_words))
                     y_test.append(1)  # Positive case
                 else:
                     X_test.append(' ')
                     y_test.append(0)  # Negative case
                 abbreviations_test.append(abbreviation)
     
+    # Vektorizace textu
+    vectorizer = CountVectorizer()
+    X_train_vec = vectorizer.fit_transform(X_train)
     X_test_vec = vectorizer.transform(X_test)
-    
+
+    # Aplikace modelu LDA
+    lda_model = apply_lda(X_train_vec)
+
+    # Přiřazení témat ke každé žádosti
+    topic_assignments = assign_topics(lda_model, X_test_vec)
+    print("\nTopic Assignments for Each Request:")
+    for i, assignment in enumerate(topic_assignments):
+        abbreviation = abbreviations_test[i]
+        print(f"Request {abbreviation}: Topic {assignment}")
+
+    # Treshold for classification
+    threshold = 0.5
+
+    print("\nClassification based on Threshold:")
+    for i, assignment in enumerate(topic_assignments):
+        abbreviation = abbreviations_test[i]
+        print(sum(assignment))
+        print(len(assignment))
+        avg_topic = sum(assignment) / len(assignment)
+        if avg_topic >= threshold:
+            print(f"Request {abbreviation}: Ano")
+        else:
+            print(f"Request {abbreviation}: Ne")
+
+
+    # Klasifikace žádostí
     clf = MultinomialNB()
     clf.fit(X_train_vec, y_train)
-    
     y_pred = clf.predict(X_test_vec)
-    
-    print("Classification Report:")
-    print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
-    print("\nAccuracy for Each Request:")
+
+    # Vyhodnocení klasifikace
+    evaluate_classification(y_test, y_pred)
+
+    # Vyhodnocení úspěšnosti žádostí
     success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts)
     for abbreviation in success_rates:
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
         print(f"{abbreviation.upper()} - {average_success_rate:.2f}%")
-        
+
     print("\nSimilar Words for Each Request:")
     for abbreviation in abbreviations_test:
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
@@ -170,5 +207,5 @@ test_data_file = "testovaciData.csv"
 reason_file = "syrie.txt"
 stopwords_file = "stopwords-cs.json"
 
-# Evaluating applications
-evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file)
+# Zpracování a vyhodnocení žádostí
+process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file)
