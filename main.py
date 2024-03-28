@@ -11,7 +11,8 @@ from sklearn.metrics import precision_recall_fscore_support
 def nacti_csv_soubor(nazev_souboru):
     data = []
     with open(nazev_souboru, 'r', encoding='utf-8') as csvfile:
-        csvreader = csv.DictReader(csvfile)
+        csvreader = csv.reader(csvfile)
+        next(csvreader)  # Přeskočení prvního řádku (hlavička)
         for row in csvreader:
             data.append(row)
     return data
@@ -47,6 +48,10 @@ def zjisti_duvody_syrie(soubor_zadosti, soubor_duvodu, soubor_stopwords):
     
     with open(soubor_zadosti, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
+        
+        # Přeskočení hlavičky
+        next(csvreader)
+        
         for row in csvreader:
             if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
                 zkratka = row['zkratka'].lower()
@@ -76,8 +81,8 @@ def zjisti_duvody_syrie(soubor_zadosti, soubor_duvodu, soubor_stopwords):
     
     y_pred = clf.predict(X_test_vec)
     
-    print(classification_report(y_test, y_pred))
-    
+    print(classification_report(y_test, y_pred, zero_division='warn'))
+        
     # Vizualizace výsledků
     plot_classification_report(y_test, y_pred)
 
@@ -99,4 +104,6 @@ soubor_zadosti_ne = "zadostiSyrieNe.csv"
 soubor_duvodu = "syrie.txt"
 soubor_stopwords = "stopwords-cs.json"
 
-zjisti_duvody_syrie(soubor_zadosti_ano, soubor_duvodu, soubor_stopwords)
+# Použití testovacích dat
+testovaci_data = "testovaciData.csv"
+zjisti_duvody_syrie(testovaci_data, soubor_duvodu, soubor_stopwords)
