@@ -39,7 +39,7 @@ def levenshtein_distance(s1, s2):
 
     return distances[len(s1)][len(s2)]
 
-def evaluate_application(y_test, y_pred, abbreviations_test, application_file_ano, reason_file, matching_counts):
+def evaluate_application(y_test, y_pred, abbreviations_test, application_file_ano, application_file_ne, reason_file, matching_counts):
     with open(application_file_ano, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         data_ano = [row for row in csvreader]
@@ -57,6 +57,14 @@ def evaluate_application(y_test, y_pred, abbreviations_test, application_file_an
             min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
             if min_distance <= 2:
                 matching_words.add(word)
+        
+        if y_pred[i] == 0:  # If predicted as negative
+            with open(application_file_ne, 'r', encoding='utf-8') as csvfile:
+                csvreader = csv.DictReader(csvfile)
+                data_ne = [row for row in csvreader]
+            for row in data_ne:
+                if levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 2:
+                    matching_words.clear()  # Clear matching words if similar reason found in rejected applications
         
         success_rate = (int(bool(matching_words)) + int(matching_counts.get(abbreviation, 0) > 0)) * 50  # 50 for each condition
         success_rates[abbreviation_lower].append(success_rate)
@@ -91,7 +99,9 @@ def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, r
                             similar.add(reason)
                 
                 if matching_words:
-                    X_train.append(' '.join(matching_words))
+                    # Include additional context from the application
+                    application_context = row['duvod_o_azyl'] + " " + row['dalsi_informace']
+                    X_train.append(application_context)
                     y_train.append(1)  # Positive case
                 else:
                     X_train.append(' ')
@@ -125,7 +135,9 @@ def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, r
                             similar.add(reason)
                 
                 if matching_words:
-                    X_test.append(' '.join(matching_words))
+                    # Include additional context from the application
+                    application_context = row['duvod_o_azyl'] + " " + row['dalsi_informace']
+                    X_test.append(application_context)
                     y_test.append(1)  # Positive case
                 else:
                     X_test.append(' ')
@@ -142,7 +154,7 @@ def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, r
     print("Classification Report:")
     print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
     print("\nAccuracy for Each Request:")
-    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, reason_file, matching_counts)
+    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts)
     for abbreviation in success_rates:
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
         print(f"{abbreviation.upper()} - {average_success_rate:.2f}%")
