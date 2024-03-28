@@ -2,11 +2,9 @@ import csv
 import re
 import json
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
-from sklearn.metrics import precision_recall_fscore_support
 
 def load_csv_file(file_name):
     data = []
@@ -25,6 +23,7 @@ def load_stopwords(stopwords_file):
     with open(stopwords_file, 'r', encoding='utf-8') as file:
         return set(json.load(file))
 
+# Funkce pro výpočet podobnosti slov
 def levenshtein_distance(s1, s2):
     distances = np.zeros((len(s1) + 1, len(s2) + 1))
 
@@ -64,16 +63,16 @@ def evaluate_application(y_test, y_pred, abbreviations_test, application_file_an
     
     return success_rates
 
-def evaluate_syria_applications(application_file, reason_file, stopwords_file):
+def evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file):
     stopwords = load_stopwords(stopwords_file)
     reasons = load_reasons(reason_file)
-    X = []
-    y = []
-    abbreviations = []
+    X_train = []
+    y_train = []
+    abbreviations_train = []
     matching_counts = {}
     similar_words = {}  # Dictionary to store similar words
     
-    with open(application_file, 'r', encoding='utf-8') as csvfile:
+    with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
@@ -92,19 +91,47 @@ def evaluate_syria_applications(application_file, reason_file, stopwords_file):
                             similar.add(reason)
                 
                 if matching_words:
-                    X.append(' '.join(matching_words))
-                    y.append(1)  # Positive case
+                    X_train.append(' '.join(matching_words))
+                    y_train.append(1)  # Positive case
                 else:
-                    X.append(' ')
-                    y.append(0)  # Negative case
-                abbreviations.append(abbreviation)
+                    X_train.append(' ')
+                    y_train.append(0)  # Negative case
+                abbreviations_train.append(abbreviation)
                 matching_counts[abbreviation] = len(matching_words)  # Store the count of matching words
                 similar_words[abbreviation] = similar  # Store similar words
     
-    X_train, X_test, y_train, y_test, abbreviations_train, abbreviations_test = train_test_split(X, y, abbreviations, test_size=0.3, random_state=42)
-    
     vectorizer = CountVectorizer()
     X_train_vec = vectorizer.fit_transform(X_train)
+    
+    with open(test_data_file, 'r', encoding='utf-8') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        X_test = []
+        y_test = []
+        abbreviations_test = []
+        for row in csvreader:
+            if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
+                abbreviation = row['zkratka'].lower()
+                application_words = re.findall(r'\b\w+\b', row['duvod_o_azyl'].lower())
+                
+                matching_words = set()
+                similar = set()  # Set to store similar words
+                for word in application_words:
+                    min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
+                    if min_distance <= 2 and word not in stopwords:
+                        matching_words.add(word)
+                    # Find similar words
+                    for reason in reasons:
+                        if levenshtein_distance(word, reason) <= 2:
+                            similar.add(reason)
+                
+                if matching_words:
+                    X_test.append(' '.join(matching_words))
+                    y_test.append(1)  # Positive case
+                else:
+                    X_test.append(' ')
+                    y_test.append(0)  # Negative case
+                abbreviations_test.append(abbreviation)
+    
     X_test_vec = vectorizer.transform(X_test)
     
     clf = MultinomialNB()
@@ -115,7 +142,7 @@ def evaluate_syria_applications(application_file, reason_file, stopwords_file):
     print("Classification Report:")
     print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
     print("\nAccuracy for Each Request:")
-    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, application_file_ano, reason_file, matching_counts)
+    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, reason_file, matching_counts)
     for abbreviation in success_rates:
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
         print(f"{abbreviation.upper()} - {average_success_rate:.2f}%")
@@ -124,28 +151,12 @@ def evaluate_syria_applications(application_file, reason_file, stopwords_file):
     for abbreviation in abbreviations_test:
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
 
-def plot_classification_report(y_test, y_pred):
-    precision, recall, f1_score, _ = precision_recall_fscore_support(y_test, y_pred, average=None)
-    
-    labels = ['Negative', 'Positive']
-    metrics = [precision, recall, f1_score]
-    metric_names = ['Precision', 'Recall', 'F1-score']
-   
-    for i, metric in enumerate(metrics):
-        print(f'{metric_names[i]} by Class:')
-        for j, label in enumerate(labels):
-            print(f'{label}: {metric[j]}')
-        print()
-
 # File paths
-application_file_ano = "zadostiSyrieAno.csv"
-application_file_ne = "zadostiSyrieNe.csv"
+train_ano_file = "zadostiSyrieAno.csv"
+train_ne_file = "zadostiSyrieNe.csv"
+test_data_file = "testovaciData.csv"
 reason_file = "syrie.txt"
 stopwords_file = "stopwords-cs.json"
 
-# Using test data
-test_data_files = ["testovaciData.csv"]  # Add all test data files here
-
-# Evaluating applications for each test data file
-for test_data_file in test_data_files:
-    evaluate_syria_applications(test_data_file, reason_file, stopwords_file)
+# Evaluating applications
+evaluate_syria_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file)
