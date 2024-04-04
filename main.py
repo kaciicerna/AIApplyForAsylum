@@ -88,7 +88,6 @@ def evaluate_application(y_test, y_pred, abbreviations_test, application_file_an
     
     return success_rates
 
-# Funkce pro zpracování a vyhodnocení žádostí s využitím tématického modelování
 def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file):
     stopwords = load_stopwords(stopwords_file)
     reasons = load_reasons(reason_file)
@@ -107,12 +106,13 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
                 matching_words = set()
                 similar = set()  # Set to store similar words
                 for word in application_words:
+                    # Zvýšení mezí podobnosti z 2 na 3
                     min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
-                    if min_distance <= 2 and word not in stopwords:
+                    if min_distance <= 3 and word not in stopwords:
                         matching_words.add(word)
                     # Find similar words
                     for reason in reasons:
-                        if levenshtein_distance(word, reason) <= 2:
+                        if levenshtein_distance(word, reason) <= 3:
                             similar.add(reason)
                 
                 if matching_words:
@@ -136,12 +136,13 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
                 matching_words = set()
                 similar = set()  # Set to store similar words
                 for word in application_words:
+                    # Zvýšení mezí podobnosti z 2 na 3
                     min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
-                    if min_distance <= 2 and word not in stopwords:
+                    if min_distance <= 3 and word not in stopwords:
                         matching_words.add(word)
                     # Find similar words
                     for reason in reasons:
-                        if levenshtein_distance(word, reason) <= 2:
+                        if levenshtein_distance(word, reason) <= 3:
                             similar.add(reason)
                 
                 if matching_words:
@@ -166,21 +167,6 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     for i, assignment in enumerate(topic_assignments):
         abbreviation = abbreviations_test[i]
         print(f"Request {abbreviation}: Topic {assignment}")
-
-    # Treshold for classification
-    threshold = 0.5
-
-    print("\nClassification based on Threshold:")
-    for i, assignment in enumerate(topic_assignments):
-        abbreviation = abbreviations_test[i]
-        print(sum(assignment))
-        print(len(assignment))
-        avg_topic = sum(assignment) / len(assignment)
-        if avg_topic >= threshold:
-            print(f"Request {abbreviation}: Ano")
-        else:
-            print(f"Request {abbreviation}: Ne")
-
 
     # Klasifikace žádostí
     clf = MultinomialNB()
