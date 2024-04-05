@@ -45,11 +45,14 @@ def evaluate_classification(y_test, y_pred):
     print("Classification Report:")
     print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
 
-# Funkce pro vyhodnocení úspěšnosti klasifikace
-def evaluate_application(y_test, y_pred, abbreviations_test, application_file_ano, application_file_ne, reason_file, matching_counts):
-    with open(application_file_ano, 'r', encoding='utf-8') as csvfile:
+def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts):
+    with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         data_ano = [row for row in csvreader]
+    
+    with open(train_ne_file, 'r', encoding='utf-8') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        data_ne = [row for row in csvreader]
     
     reasons = load_reasons(reason_file)
     
@@ -73,38 +76,30 @@ def evaluate_application(y_test, y_pred, abbreviations_test, application_file_an
         matching_words_count = len(matching_words)
         
         # Zjištění, zda je text podobný negativním trénovacím datům
-        similar_to_negative_data = False
-        if y_pred[i] == 0:  # If predicted as negative
-            with open(application_file_ne, 'r', encoding='utf-8') as csvfile:
-                csvreader = csv.DictReader(csvfile)
-                data_ne = [row for row in csvreader]
-            for row in data_ne:
-                if levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 2:
-                    similar_to_negative_data = True
-                    break
+        similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 2 for row in data_ne)
         
-        # Vyhodnocení úspěšnosti žádosti na základě více faktorů
-        if data_ano[i]['duvod_o_azyl'].strip() == "":
-            success_rate = 0  # Pokud je důvod o azyl prázdný -> 0%
-            success_rates[abbreviation_lower].append(success_rate)
-            continue
-        
-        if similar_to_training:
-            success_rate = 100  # Data jsou shodná nebo podobná trénovacím datům -> 100%
-        elif matching_words_count > 0:
-            if matching_words_count >= 3:
-                success_rate = 60  # Data obsahují 3 nebo více shodných slov -> 60%
-            else:
-                success_rate = 30  # Data obsahují slova ze souboru Sýrie.txt -> 30%
+        # Vyhodnocení úspěšnosti žádosti na základě nových kritérií
+        if data_ano[i]['duvod_o_azyl'].strip() == "" or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
+            success_rate = 0  # Prázdný důvod o azyl nebo podepsané prohlášení s "ne" -> 0%
+        elif similar_to_training:
+            success_rate = 70  # Data jsou shodná nebo podobná pozitivním trénovacím datům -> 70%
         elif similar_to_negative_data:
-            success_rate = 0  # Data jsou podobná negativním trénovacím datům -> 0%
+            success_rate = 0 # Data jsou shodná nebo podobná negativním trénovacím datům -> 0%
         else:
-            success_rate = 0  # Defaultní hodnota úspěšnosti (pro situace, které neodpovídají žádnému z předchozích kritérií)
+            success_rate = 0  # Defaultní hodnota úspěšnosti
+        
+        # Přičtení dalších procent za shodná slova
+        success_rate += matching_words_count * 5
+        
+        # Omezení maximální hodnoty na 100%
+        success_rate = min(success_rate, 100)
         
         # Přidání vypočtené úspěšnosti do seznamu
         success_rates[abbreviation_lower].append(success_rate)
     
     return success_rates
+
+
 
 def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file):
     stopwords = load_stopwords(stopwords_file)
@@ -183,7 +178,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
 # File paths
 train_ano_file = "zadostiSyrieAno.csv"
 train_ne_file = "zadostiSyrieNe.csv"
-test_data_file = "testovaciData2.csv"
+test_data_file = "testovaciData.csv"
 reason_file = "syrie.txt"
 stopwords_file = "stopwords-cs.json"
 
