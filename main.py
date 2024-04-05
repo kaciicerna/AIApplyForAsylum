@@ -2,10 +2,10 @@ import csv
 import re
 import json
 import numpy as np
+from stemmer import cz_stem
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
-from sklearn.decomposition import LatentDirichletAllocation
 
 def load_csv_file(file_name):
     data = []
@@ -45,17 +45,7 @@ def evaluate_classification(y_test, y_pred):
     print("Classification Report:")
     print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
 
-# Tématické modelování s použitím Latent Dirichlet Allocation
-def apply_lda(X_train_vec, num_topics=5):
-    lda = LatentDirichletAllocation(n_components=num_topics, random_state=42)
-    lda.fit(X_train_vec)
-    return lda
-
-# Funkce pro přiřazení tématických prvků ke každé žádosti
-def assign_topics(lda_model, X_test_vec):
-    return lda_model.transform(X_test_vec)
-
-# Evaluace úspěšnosti klasifikace
+# Funkce pro vyhodnocení úspěšnosti klasifikace
 def evaluate_application(y_test, y_pred, abbreviations_test, application_file_ano, application_file_ne, reason_file, matching_counts):
     with open(application_file_ano, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
@@ -71,19 +61,47 @@ def evaluate_application(y_test, y_pred, abbreviations_test, application_file_an
         
         matching_words = set()
         for word in re.findall(r'\b\w+\b', data_ano[i]['duvod_o_azyl'].lower()):
-            min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
-            if min_distance <= 2:
+            stemmed_word = cz_stem(word)  # Stemmatizace slova
+            min_distance = min(levenshtein_distance(stemmed_word, reason) for reason in reasons)
+            if min_distance <= 3:
                 matching_words.add(word)
         
+        # Zjištění, zda je text podobný trénovacím datům
+        similar_to_training = bool(matching_counts.get(abbreviation, 0) > 0)
+        
+        # Zjištění skutečného počtu shodných slov
+        matching_words_count = len(matching_words)
+        
+        # Zjištění, zda je text podobný negativním trénovacím datům
+        similar_to_negative_data = False
         if y_pred[i] == 0:  # If predicted as negative
             with open(application_file_ne, 'r', encoding='utf-8') as csvfile:
                 csvreader = csv.DictReader(csvfile)
                 data_ne = [row for row in csvreader]
             for row in data_ne:
                 if levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 2:
-                    matching_words.clear()  # Clear matching words if similar reason found in rejected applications
+                    similar_to_negative_data = True
+                    break
         
-        success_rate = (int(bool(matching_words)) + int(matching_counts.get(abbreviation, 0) > 0)) * 50  # 50 for each condition
+        # Vyhodnocení úspěšnosti žádosti na základě více faktorů
+        if data_ano[i]['duvod_o_azyl'].strip() == "":
+            success_rate = 0  # Pokud je důvod o azyl prázdný -> 0%
+            success_rates[abbreviation_lower].append(success_rate)
+            continue
+        
+        if similar_to_training:
+            success_rate = 100  # Data jsou shodná nebo podobná trénovacím datům -> 100%
+        elif matching_words_count > 0:
+            if matching_words_count >= 3:
+                success_rate = 60  # Data obsahují 3 nebo více shodných slov -> 60%
+            else:
+                success_rate = 30  # Data obsahují slova ze souboru Sýrie.txt -> 30%
+        elif similar_to_negative_data:
+            success_rate = 0  # Data jsou podobná negativním trénovacím datům -> 0%
+        else:
+            success_rate = 0  # Defaultní hodnota úspěšnosti (pro situace, které neodpovídají žádnému z předchozích kritérií)
+        
+        # Přidání vypočtené úspěšnosti do seznamu
         success_rates[abbreviation_lower].append(success_rate)
     
     return success_rates
@@ -101,29 +119,19 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         for row in csvreader:
             if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
                 abbreviation = row['zkratka'].lower()
-                application_words = re.findall(r'\b\w+\b', row['duvod_o_azyl'].lower())
-                
-                matching_words = set()
-                similar = set()  # Set to store similar words
-                for word in application_words:
-                    # Zvýšení mezí podobnosti z 2 na 3
-                    min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
-                    if min_distance <= 3 and word not in stopwords:
-                        matching_words.add(word)
-                    # Find similar words
-                    for reason in reasons:
-                        if levenshtein_distance(word, reason) <= 3:
-                            similar.add(reason)
-                
-                if matching_words:
-                    X_train.append(' '.join(matching_words))
-                    y_train.append(1)  # Positive case
-                else:
-                    X_train.append(' ')
-                    y_train.append(0)  # Negative case
+                X_train.append(row['duvod_o_azyl'].lower())
+                y_train.append(1)  # Positive case
                 abbreviations_train.append(abbreviation)
-                matching_counts[abbreviation] = len(matching_words)  # Store the count of matching words
-                similar_words[abbreviation] = similar  # Store similar words
+                matching_counts[abbreviation] = len(re.findall(r'\b\w+\b', row['duvod_o_azyl'].lower()))  # Store the count of matching words
+    
+    with open(train_ne_file, 'r', encoding='utf-8') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        for row in csvreader:
+            if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
+                abbreviation = row['zkratka'].lower()
+                X_train.append(row['duvod_o_azyl'].lower())
+                y_train.append(0)  # Negative case
+                abbreviations_train.append(abbreviation)
     
     # Načtení a zpracování testovacích dat
     with open(test_data_file, 'r', encoding='utf-8') as csvfile:
@@ -131,42 +139,19 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         for row in csvreader:
             if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
                 abbreviation = row['zkratka'].lower()
-                application_words = re.findall(r'\b\w+\b', row['duvod_o_azyl'].lower())
-                
-                matching_words = set()
-                similar = set()  # Set to store similar words
-                for word in application_words:
-                    # Zvýšení mezí podobnosti z 2 na 3
-                    min_distance = min(levenshtein_distance(word, reason) for reason in reasons)
-                    if min_distance <= 3 and word not in stopwords:
-                        matching_words.add(word)
-                    # Find similar words
-                    for reason in reasons:
-                        if levenshtein_distance(word, reason) <= 3:
-                            similar.add(reason)
-                
-                if matching_words:
-                    X_test.append(' '.join(matching_words))
+                X_test.append(row['duvod_o_azyl'].lower())
+                # Zde se ukládají binární hodnoty
+                if abbreviation in matching_counts:
                     y_test.append(1)  # Positive case
                 else:
-                    X_test.append(' ')
                     y_test.append(0)  # Negative case
                 abbreviations_test.append(abbreviation)
-    
+                similar_words[abbreviation] = set()  # inicializace prázdného setu pro každou zkratku
+
     # Vektorizace textu
     vectorizer = CountVectorizer()
     X_train_vec = vectorizer.fit_transform(X_train)
     X_test_vec = vectorizer.transform(X_test)
-
-    # Aplikace modelu LDA
-    lda_model = apply_lda(X_train_vec)
-
-    # Přiřazení témat ke každé žádosti
-    topic_assignments = assign_topics(lda_model, X_test_vec)
-    print("\nTopic Assignments for Each Request:")
-    for i, assignment in enumerate(topic_assignments):
-        abbreviation = abbreviations_test[i]
-        print(f"Request {abbreviation}: Topic {assignment}")
 
     # Klasifikace žádostí
     clf = MultinomialNB()
@@ -182,6 +167,15 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
         print(f"{abbreviation.upper()} - {average_success_rate:.2f}%")
 
+    # Vyhledání podobných slov
+    for abbreviation, request in zip(abbreviations_test, X_test):
+        for word in re.findall(r'\b\w+\b', request):
+            stemmed_word = cz_stem(word)  # Stemmatizace slova
+            for reason in reasons:
+                if levenshtein_distance(stemmed_word, reason) <= 3:
+                    similar_words[abbreviation].add(word)
+
+    # Výstup podobných slov pro každou žádost
     print("\nSimilar Words for Each Request:")
     for abbreviation in abbreviations_test:
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
@@ -189,7 +183,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
 # File paths
 train_ano_file = "zadostiSyrieAno.csv"
 train_ne_file = "zadostiSyrieNe.csv"
-test_data_file = "testovaciData.csv"
+test_data_file = "testovaciData2.csv"
 reason_file = "syrie.txt"
 stopwords_file = "stopwords-cs.json"
 
