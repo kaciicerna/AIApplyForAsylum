@@ -6,6 +6,9 @@ from stemmer import cz_stem
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+import matplotlib.pyplot as plt
 
 def load_csv_file(file_name):
     data = []
@@ -39,6 +42,32 @@ def levenshtein_distance(s1, s2):
             distances[i][j] = min(distances[i - 1][j] + 1, distances[i][j - 1] + 1, distances[i - 1][j - 1] + cost)
 
     return distances[len(s1)][len(s2)]
+
+# Sloupcový graf průměrné úspěšnosti pro každou zkratku
+def plot_similar_words(similar_words):
+    # Sečíst počet výskytů každého slova
+    word_counts = {}
+    for words in similar_words.values():
+        for word in words:
+            word_counts[word] = word_counts.get(word, 0) + 1
+    
+    # Seřadit slova podle četnosti
+    sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+    top_words = [word[0] for word in sorted_words[:10]]  # Vybrat prvních 10 nejčastějších slov
+    
+    # Vytvořit sloupcový graf
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_words, [word_counts[word] for word in top_words])
+    plt.title('Četnost konkrétních slov (similar words) ve všech žádostech')
+    plt.xlabel('Slovo')
+    plt.ylabel('Počet výskytů')
+    plt.xticks(rotation=45)
+    plt.show()
+
+# Funkce pro vyhodnocení úspěšnosti klasifikace
+def evaluate_classification(y_test, y_pred):
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
 
 def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts):
     with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
@@ -151,6 +180,9 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     clf.fit(X_train_vec, y_train)
     y_pred = clf.predict(X_test_vec)
     print(y_pred)
+    
+    # Vyhodnocení klasifikace
+    # evaluate_classification(y_test, y_pred)
 
     # Vyhodnocení úspěšnosti žádostí
     success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts)
@@ -170,14 +202,16 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     print("\nSimilar Words for Each Request:")
     for abbreviation in abbreviations_test:
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
-
+        
+     # Volání funkcí pro vykreslení grafů
+    plot_similar_words(similar_words)
+    
 # File paths
 train_ano_file = "zadostiSyrieAno.csv"
 train_ne_file = "zadostiSyrieNe.csv"
 test_data_file = "testovaciData2.csv"
 reason_file = "syrie.txt"
 stopwords_file = "stopwords-cs.json"
-
 
 # Zpracování a vyhodnocení žádostí
 process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file)
