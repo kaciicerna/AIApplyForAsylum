@@ -15,3 +15,8 @@
 ```bash
 pip3 install -r requirements.txt 
 ```
+
+3. Spuštění main.py
+```bash
+python3 main.py
+```
