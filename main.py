@@ -76,11 +76,11 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         matching_words_count = len(matching_words)
         
         # Zjištění, zda je text podobný negativním trénovacím datům
-        similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 2 for row in data_ne)
+        similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 3 for row in data_ne)
         
         # Vyhodnocení úspěšnosti žádosti na základě nových kritérií
-        if data_ano[i]['duvod_o_azyl'].strip() == "" or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
-            success_rate = 0  # Prázdný důvod o azyl nebo podepsané prohlášení s "ne" -> 0%
+        if y_pred[i] == 0 or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
+            success_rate = 0  # Klasifikátor předpověděl negativní výsledek nebo podepsané prohlášení s "ne" -> 0%
         elif similar_to_training:
             success_rate = 70  # Data jsou shodná nebo podobná pozitivním trénovacím datům -> 70%
         elif similar_to_negative_data:
@@ -98,7 +98,6 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         success_rates[abbreviation_lower].append(success_rate)
     
     return success_rates
-
 
 
 def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file):
@@ -150,9 +149,11 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
 
     # Klasifikace žádostí
     clf = MultinomialNB()
+    
     clf.fit(X_train_vec, y_train)
     y_pred = clf.predict(X_test_vec)
-
+    print(y_pred)
+    
     # Vyhodnocení klasifikace
     evaluate_classification(y_test, y_pred)
 
@@ -178,9 +179,10 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
 # File paths
 train_ano_file = "zadostiSyrieAno.csv"
 train_ne_file = "zadostiSyrieNe.csv"
-test_data_file = "testovaciData.csv"
+test_data_file = "testovaciData2.csv"
 reason_file = "syrie.txt"
 stopwords_file = "stopwords-cs.json"
+
 
 # Zpracování a vyhodnocení žádostí
 process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file)
