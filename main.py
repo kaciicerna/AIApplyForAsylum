@@ -40,11 +40,6 @@ def levenshtein_distance(s1, s2):
 
     return distances[len(s1)][len(s2)]
 
-# Funkce pro vyhodnocení úspěšnosti klasifikace
-def evaluate_classification(y_test, y_pred):
-    print("Classification Report:")
-    print(classification_report(y_test, y_pred, zero_division=1))  # Přidání parametru zero_division=1
-
 def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts):
     with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
@@ -79,7 +74,10 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 3 for row in data_ne)
         
         # Vyhodnocení úspěšnosti žádosti na základě nových kritérií
-        if y_pred[i] == 0 or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
+        if (y_pred[i] == 0 or 
+            data_ano[i]['podepsane_prohlaseni'].lower() == "ne" or 
+            data_ano[i]['duvod_o_azyl'] == "" or 
+            data_ano[i]['doklady_dokumenty'] == ""):
             success_rate = 0  # Klasifikátor předpověděl negativní výsledek nebo podepsané prohlášení s "ne" -> 0%
         elif similar_to_training:
             success_rate = 70  # Data jsou shodná nebo podobná pozitivním trénovacím datům -> 70%
@@ -153,9 +151,6 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     clf.fit(X_train_vec, y_train)
     y_pred = clf.predict(X_test_vec)
     print(y_pred)
-    
-    # Vyhodnocení klasifikace
-    evaluate_classification(y_test, y_pred)
 
     # Vyhodnocení úspěšnosti žádostí
     success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reason_file, matching_counts)
