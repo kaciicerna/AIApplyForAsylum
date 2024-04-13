@@ -62,6 +62,21 @@ def plot_similar_words(similar_words):
         plt.text(i, word_counts[v] + 0.2, str(word_counts[v]), ha='center', va='bottom')
 
     plt.show()
+    
+def plot_success_failure_by_country(success_rates):
+    countries = list(success_rates.keys())
+    success_rates_values = [sum(success_rates[country]) / len(success_rates[country]) for country in countries]
+    failure_rates_values = [100 - rate for rate in success_rates_values]
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(countries, success_rates_values, label='Úspěch', color='g', alpha=0.6)
+    plt.bar(countries, failure_rates_values, bottom=success_rates_values, label='Neúspěch', color='r', alpha=0.6)
+    plt.xlabel('Země')
+    plt.ylabel('Procento')
+    plt.title('Úspěch a neúspěch podle zemí')
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.show()
 
 # Funkce pro vyhodnocení úspěšnosti klasifikace
 def evaluate_classification(y_test, y_pred):
@@ -83,38 +98,39 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         if abbreviation_lower not in success_rates:
             success_rates[abbreviation_lower] = []
         
-        matching_words = set()
-        for word in re.findall(r'\b\w+\b', data_ano[i]['duvod_o_azyl'].lower()):
-            stemmed_word = cz_stem(word) # Stemmatizace slova
-            min_distance = min(levenshtein_distance(stemmed_word, reason) for reason in reasons)
-            if min_distance <= 3:
-                matching_words.add(word)
-                
-        # Zjištění, zda je text podobný trénovacím datům
-        similar_to_training = bool(matching_counts.get(abbreviation, 0) > 0)
-        # Zjištění skutečného počtu shodných slov
-        matching_words_count = len(matching_words)
-        
-        # Zjištění, zda je text podobný negativním trénovacím datům
-        similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 3 for row in data_ne)
-        
-        # Vyhodnocení úspěšnosti žádosti na základě nových kritérií
-        if (y_pred[i] == 0 or 
-            data_ano[i]['podepsane_prohlaseni'].lower() == "ne" or 
-            data_ano[i]['duvod_o_azyl'] == "" or 
-            data_ano[i]['doklady_dokumenty'] == ""):
-            success_rate = 0  # Klasifikátor předpověděl negativní výsledek nebo podepsané prohlášení s "ne" -> 0%
-        elif similar_to_training:
-            success_rate = 70  # Data jsou shodná nebo podobná pozitivním trénovacím datům -> 70%
-        elif similar_to_negative_data:
-            success_rate = 0 # Data jsou shodná nebo podobná negativním trénovacím datům -> 0%
+        # Proces kontroly
+        if data_ano[i]['doklady_dokumenty'] == "":
+            success_rate = 0  # Žádost má prázdný sloupec 'doklady_dokumenty' -> 0%
+        elif data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
+            success_rate = 0  # Žádost má 'podepsane_prohlaseni' rovno "ne" -> 0%
         else:
-            success_rate = 0  # Defaultní hodnota úspěšnosti
-        
-        # Přičtení dalších procent za shodná slova
-        success_rate += matching_words_count * 5
-        # Omezení maximální hodnoty na 100%
-        success_rate = min(success_rate, 100)
+            matching_words = set()
+            for word in re.findall(r'\b\w+\b', data_ano[i]['duvod_o_azyl'].lower()):
+                stemmed_word = cz_stem(word) # Stemmatizace slova
+                min_distance = min(levenshtein_distance(stemmed_word, reason) for reason in reasons)
+                if min_distance <= 3:
+                    matching_words.add(word)
+                    
+            # Zjištění, zda je text podobný trénovacím datům
+            similar_to_training = bool(matching_counts.get(abbreviation, 0) > 0)
+            # Zjištění skutečného počtu shodných slov
+            matching_words_count = len(matching_words)
+            
+            # Zjištění, zda je text podobný negativním trénovacím datům
+            similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 3 for row in data_ne)
+            
+            # Vyhodnocení úspěšnosti žádosti na základě nových kritérií
+            if y_pred[i] == 0 or similar_to_negative_data:
+                success_rate = 0  # Klasifikátor předpověděl negativní výsledek nebo data jsou podobná negativním trénovacím datům -> 0%
+            elif similar_to_training:
+                success_rate = 70  # Data jsou shodná nebo podobná pozitivním trénovacím datům -> 70%
+            else:
+                success_rate = 0  # Defaultní hodnota úspěšnosti
+            
+            # Přičtení dalších procent za shodná slova
+            success_rate += matching_words_count * 5
+            # Omezení maximální hodnoty na 99%
+            success_rate = min(success_rate, 99)
         
         # Přidání vypočtené úspěšnosti do seznamu
         success_rates[abbreviation_lower].append(success_rate)
@@ -200,7 +216,9 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
 
     # Volání funkcí pro vykreslení grafů
-    plot_similar_words(similar_words)
+    # plot_similar_words(similar_words)
+    
+    plot_success_failure_by_country(success_rates)
 
 # File paths
 train_syrie_ano_file = "zadostSyrieAno.csv"
@@ -221,10 +239,10 @@ stopwords_file = "stopwords-cs.json"
 ### Zpracování a vyhodnocení žádostí
 
 # Volání funkce pro Syrii
-process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
+# process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
 # Volání funkce pro Irák
-process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
+# process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
 # Volání funkce pro Tunisko
-process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
+# process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
 # Volání funkce pro Afghánistán
 process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afganistan")
