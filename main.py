@@ -121,22 +121,18 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
     
     return success_rates
 
-
-def process_and_evaluate_applications(train_ano_file, train_ne_file, train_irak_ano_file, train_tunis_ano_file, train_afghanistan_ano_file, train_irak_ne_file, train_tunis_ne_file, train_afghanistan_ne_file, test_data_file, reason_syrie_file, reason_irak_file, reason_tunis_file, reason_afghanistan_file, stopwords_file):
+def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file, country):
     stopwords = load_stopwords(stopwords_file)
-    reasons_syrie = load_reasons(reason_syrie_file)
-    reasons_irak = load_reasons(reason_irak_file)
-    reasons_tunis = load_reasons(reason_tunis_file)
-    reasons_afghanistan = load_reasons(reason_afghanistan_file)  
+    reasons = load_reasons(reason_file)
     
     X_train, y_train, X_test, y_test, abbreviations_train, abbreviations_test = [], [], [], [], [], []
     matching_counts, similar_words = {}, {}
-    
-    # Načtení a zpracování trénovacích dat
+
+    # Zpracování trénovacích dat pro danou zemi
     with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
-            if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
+            if row['statni_prislusnost'].lower() == country.lower():
                 abbreviation = row['zkratka'].lower()
                 X_train.append(row['duvod_o_azyl'].lower())
                 y_train.append(1)
@@ -146,17 +142,17 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, train_irak_
     with open(train_ne_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
-            if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
+            if row['statni_prislusnost'].lower() == country.lower():
                 abbreviation = row['zkratka'].lower()
                 X_train.append(row['duvod_o_azyl'].lower())
                 y_train.append(0)
                 abbreviations_train.append(abbreviation)
                 
-    # Načtení a zpracování testovacích dat
+    # Zpracování testovacích dat pro danou zemi
     with open(test_data_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
-            if row['statni_prislusnost'].lower() in ["sýrie", "syrie"]:
+            if row['statni_prislusnost'].lower() == country.lower():
                 abbreviation = row['zkratka'].lower()
                 X_test.append(row['duvod_o_azyl'].lower())
                 if abbreviation in matching_counts:
@@ -173,13 +169,12 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, train_irak_
 
     # Klasifikace žádostí
     clf = MultinomialNB()
-    
     clf.fit(X_train_vec, y_train)
     y_pred = clf.predict(X_test_vec)
     print(y_pred)
-    
+
     # Vyhodnocení úspěšnosti žádostí
-    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reasons_syrie, matching_counts)
+    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reasons, matching_counts)
     for abbreviation in success_rates:
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
         print(f"{abbreviation.upper()} - {average_success_rate:.2f}%")
@@ -188,7 +183,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, train_irak_
     for abbreviation, request in zip(abbreviations_test, X_test):
         for word in re.findall(r'\b\w+\b', request):
             stemmed_word = cz_stem(word)
-            for reason in reasons_syrie:
+            for reason in reasons:
                 if levenshtein_distance(stemmed_word, reason) <= 3:
                     similar_words[abbreviation].add(word)
 
@@ -196,7 +191,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, train_irak_
     print("\nSimilar Words for Each Request:")
     for abbreviation in abbreviations_test:
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
-        
+
     # Volání funkcí pro vykreslení grafů
     plot_similar_words(similar_words)
 
@@ -205,16 +200,24 @@ train_syrie_ano_file = "zadostSyrieAno.csv"
 train_syrie_ne_file = "zadostSyrieNe.csv"
 train_irak_ano_file = "zadostIrakAno.csv"
 train_tunis_ano_file = "zadostTunisAno.csv"
-train_afghanistan_ano_file = "zadostAfghanistanAno.csv"
+train_afghanistan_ano_file = "zadostAfganistanAno.csv"
 train_irak_ne_file = "zadostIrakNe.csv"
 train_tunis_ne_file = "zadostTunisNe.csv"
-train_afghanistan_ne_file = "zadostAfghanistanNe.csv"
-test_data_file = "testovaciData.csv"
+train_afghanistan_ne_file = "zadostAfganistanNe.csv"
+test_data_file = "testovaciDataAll.csv"
 reason_syrie_file = "syrie.txt"
 reason_irak_file = "irak.txt"
 reason_tunis_file = "tunis.txt"
 reason_afghanistan_file = "afganistan.txt"
 stopwords_file = "stopwords-cs.json"
 
-# Zpracování a vyhodnocení žádostí
-process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, train_irak_ano_file, train_tunis_ano_file, train_afghanistan_ano_file, train_irak_ne_file, train_tunis_ne_file, train_afghanistan_ne_file, test_data_file, reason_syrie_file, reason_irak_file, reason_tunis_file, reason_afghanistan_file, stopwords_file)
+### Zpracování a vyhodnocení žádostí
+
+# Volání funkce pro Syrii
+process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
+# Volání funkce pro Irák
+process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
+# Volání funkce pro Tunisko
+process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
+# Volání funkce pro Afghánistán
+process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afganistan")
