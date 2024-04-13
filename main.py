@@ -134,17 +134,21 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         for row in csvreader:
             if row['statni_prislusnost'].lower() == country.lower():
                 abbreviation = row['zkratka'].lower()
-                X_train.append(row['duvod_o_azyl'].lower())
+                text = row['duvod_o_azyl'].lower()
+                filtered_text = ' '.join(word for word in re.findall(r'\b\w+\b', text) if word not in stopwords)
+                X_train.append(filtered_text)
                 y_train.append(1)
                 abbreviations_train.append(abbreviation)
-                matching_counts[abbreviation] = len(re.findall(r'\b\w+\b', row['duvod_o_azyl'].lower()))
+                matching_counts[abbreviation] = len(re.findall(r'\b\w+\b', text))
     
     with open(train_ne_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             if row['statni_prislusnost'].lower() == country.lower():
                 abbreviation = row['zkratka'].lower()
-                X_train.append(row['duvod_o_azyl'].lower())
+                text = row['duvod_o_azyl'].lower()
+                filtered_text = ' '.join(word for word in re.findall(r'\b\w+\b', text) if word not in stopwords)
+                X_train.append(filtered_text)
                 y_train.append(0)
                 abbreviations_train.append(abbreviation)
                 
@@ -154,7 +158,9 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         for row in csvreader:
             if row['statni_prislusnost'].lower() == country.lower():
                 abbreviation = row['zkratka'].lower()
-                X_test.append(row['duvod_o_azyl'].lower())
+                text = row['duvod_o_azyl'].lower()
+                filtered_text = ' '.join(word for word in re.findall(r'\b\w+\b', text) if word not in stopwords)
+                X_test.append(filtered_text)
                 if abbreviation in matching_counts:
                     y_test.append(1)
                 else:
@@ -174,6 +180,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     print(y_pred)
 
     # Vyhodnocení úspěšnosti žádostí
+    print(f"\n{'=' * 20} {country.upper()} {'=' * 20}")
     success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reasons, matching_counts)
     for abbreviation in success_rates:
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
