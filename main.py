@@ -99,10 +99,8 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
             success_rates[abbreviation_lower] = []
         
         # Proces kontroly
-        if data_ano[i]['doklady_dokumenty'] == "":
-            success_rate = 0  # Žádost má prázdný sloupec 'doklady_dokumenty' -> 0%
-        elif data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
-            success_rate = 0  # Žádost má 'podepsane_prohlaseni' rovno "ne" -> 0%
+        if data_ano[i]['doklady_dokumenty'] == "" or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
+            success_rate = 0  # Žádost má prázdný sloupec 'doklady_dokumenty' nebo 'podepsane_prohlaseni' rovno "ne" -> 0%
         else:
             matching_words = set()
             for word in re.findall(r'\b\w+\b', data_ano[i]['duvod_o_azyl'].lower()):
@@ -239,10 +237,10 @@ stopwords_file = "stopwords-cs.json"
 ### Zpracování a vyhodnocení žádostí
 
 # Volání funkce pro Syrii
-# process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
+process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
 # Volání funkce pro Irák
-# process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
+process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
 # Volání funkce pro Tunisko
-# process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
+process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
 # Volání funkce pro Afghánistán
 process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afganistan")
