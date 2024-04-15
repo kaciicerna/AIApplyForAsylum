@@ -229,10 +229,10 @@ train_syrie_ano_file = "zadostSyrieAno.csv"
 train_syrie_ne_file = "zadostSyrieNe.csv"
 train_irak_ano_file = "zadostIrakAno.csv"
 train_tunis_ano_file = "zadostTunisAno.csv"
-train_afghanistan_ano_file = "zadostAfganistanAno.csv"
+train_afghanistan_ano_file = "zadostAfghanistanAno.csv"
 train_irak_ne_file = "zadostIrakNe.csv"
 train_tunis_ne_file = "zadostTunisNe.csv"
-train_afghanistan_ne_file = "zadostAfganistanNe.csv"
+train_afghanistan_ne_file = "zadostAfghanistanNe.csv"
 test_data_file = "testovaciDataF.csv"
 reason_syrie_file = "syrie.txt"
 reason_irak_file = "irak.txt"
@@ -248,4 +248,4 @@ process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_
 # Volání funkce pro Tunisko
 process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
 # Volání funkce pro Afghánistán
-process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afganistan")
+process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afghánistán")
