@@ -100,7 +100,7 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         
         # Proces kontroly
         if data_ano[i]['doklady_dokumenty'] == "" or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
-            success_rate = 0  # Žádost má prázdný sloupec 'doklady_dokumenty' nebo 'podepsane_prohlaseni' rovno "ne" -> 0%
+            success_rate = 0
         else:
             matching_words = set()
             for word in re.findall(r'\b\w+\b', data_ano[i]['duvod_o_azyl'].lower()):
@@ -132,7 +132,10 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         
         # Přidání vypočtené úspěšnosti do seznamu
         success_rates[abbreviation_lower].append(success_rate)
-    
+        
+        # Výpis počtu shodných slov vedle úspěšnosti žádosti
+        print(f"{abbreviation.upper()} - {success_rate:.2f}%, shodná slova {matching_words_count}/{(20)}")
+
     return success_rates
 
 def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file, country):
@@ -194,7 +197,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     print(y_pred)
     
     # Vyhodnocení klasifikace
-    # evaluate_classification(y_test, y_pred)
+    evaluate_classification(y_test, y_pred)
 
     # Vyhodnocení úspěšnosti žádostí
     print(f"\n{'=' * 20} {country.upper()} {'=' * 20}")
@@ -230,7 +233,7 @@ train_afghanistan_ano_file = "zadostAfganistanAno.csv"
 train_irak_ne_file = "zadostIrakNe.csv"
 train_tunis_ne_file = "zadostTunisNe.csv"
 train_afghanistan_ne_file = "zadostAfganistanNe.csv"
-test_data_file = "testovaciData.csv"
+test_data_file = "testovaciDataF.csv"
 reason_syrie_file = "syrie.txt"
 reason_irak_file = "irak.txt"
 reason_tunis_file = "tunis.txt"
@@ -238,7 +241,6 @@ reason_afghanistan_file = "afganistan.txt"
 stopwords_file = "stopwords-cs.json"
 
 ### Zpracování a vyhodnocení žádostí
-
 # Volání funkce pro Syrii
 process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
 # Volání funkce pro Irák
