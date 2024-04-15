@@ -192,6 +192,9 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     clf.fit(X_train_vec, y_train)
     y_pred = clf.predict(X_test_vec)
     print(y_pred)
+    
+    # Vyhodnocení klasifikace
+    # evaluate_classification(y_test, y_pred)
 
     # Vyhodnocení úspěšnosti žádostí
     print(f"\n{'=' * 20} {country.upper()} {'=' * 20}")
@@ -214,7 +217,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
         print(f"{abbreviation}: {', '.join(similar_words.get(abbreviation, []))}")
 
     # Volání funkcí pro vykreslení grafů
-    # plot_similar_words(similar_words)
+    plot_similar_words(similar_words)
     
     plot_success_failure_by_country(success_rates)
 
@@ -227,7 +230,7 @@ train_afghanistan_ano_file = "zadostAfganistanAno.csv"
 train_irak_ne_file = "zadostIrakNe.csv"
 train_tunis_ne_file = "zadostTunisNe.csv"
 train_afghanistan_ne_file = "zadostAfganistanNe.csv"
-test_data_file = "testovaciDataAll.csv"
+test_data_file = "testovaciData.csv"
 reason_syrie_file = "syrie.txt"
 reason_irak_file = "irak.txt"
 reason_tunis_file = "tunis.txt"
