@@ -73,7 +73,7 @@ def plot_success_failure_by_country(success_rates):
     plt.bar(countries, failure_rates_values, bottom=success_rates_values, label='Neúspěch', color='r', alpha=0.6)
     plt.xlabel('Země')
     plt.ylabel('Procento')
-    plt.title('Úspěch a neúspěch podle zemí')
+    plt.title('Míra úspěšnosti žádostí')
     plt.legend()
     plt.xticks(rotation=45)
     plt.show()
@@ -134,7 +134,11 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
         success_rates[abbreviation_lower].append(success_rate)
         
         # Výpis počtu shodných slov vedle úspěšnosti žádosti
-        print(f"{abbreviation.upper()} - {success_rate:.2f}%, shodná slova {matching_words_count}/{(20)}")
+        if matching_words_count > 3 and success_rate < 50:
+            print(f"{abbreviation.upper()} - {success_rate:.2f}%, shodná slova {matching_words_count}/{(20)} - doporučeno ke kontrole")
+        else:
+            # Výpis počtu shodných slov vedle úspěšnosti žádosti
+            print(f"{abbreviation.upper()} - {success_rate:.2f}%, shodná slova {matching_words_count}/{(20)}")
 
     return success_rates
 
@@ -242,10 +246,10 @@ stopwords_file = "stopwords-cs.json"
 
 ### Zpracování a vyhodnocení žádostí
 # Volání funkce pro Syrii
-process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
+# process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
 # Volání funkce pro Irák
-process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
+# process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
 # Volání funkce pro Tunisko
 process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
 # Volání funkce pro Afghánistán
-process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afghánistán")
+# process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afghánistán")
