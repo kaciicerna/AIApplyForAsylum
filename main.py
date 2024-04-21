@@ -79,18 +79,18 @@ def plot_success_failure_by_country(success_rates):
     plt.show()
 
 # Funkce pro vyhodnocení úspěšnosti klasifikace
-def evaluate_classification(y_test, y_pred):
+def evaluate_classification(y_test, y_predicted):
     print("Classification Report:")
-    print(classification_report(y_test, y_pred, zero_division=1))
+    print(classification_report(y_test, y_predicted, zero_division=1))
 
-def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reasons, matching_counts):
-    with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
+def evaluate_application(y_test, y_predicted, abbreviations_test, train_yes_file, train_no_file, reasons, matching_counts):
+    with open(train_yes_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
-        data_ano = [row for row in csvreader]
+        data_yes = [row for row in csvreader]
     
-    with open(train_ne_file, 'r', encoding='utf-8') as csvfile:
+    with open(train_no_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
-        data_ne = [row for row in csvreader]
+        data_no = [row for row in csvreader]
     
     success_rates = {}
     for i, abbreviation in enumerate(abbreviations_test):
@@ -99,11 +99,11 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
             success_rates[abbreviation_lower] = []
         
         # Proces kontroly
-        if data_ano[i]['doklady_dokumenty'] == "" or data_ano[i]['podepsane_prohlaseni'].lower() == "ne":
+        if data_yes[i]['doklady_dokumenty'] == "" or data_yes[i]['podepsane_prohlaseni'].lower() == "ne":
             success_rate = 0
         else:
             matching_words = set()
-            for word in re.findall(r'\b\w+\b', data_ano[i]['duvod_o_azyl'].lower()):
+            for word in re.findall(r'\b\w+\b', data_yes[i]['duvod_o_azyl'].lower()):
                 stemmed_word = cz_stem(word) # Stemmatizace slova
                 min_distance = min(levenshtein_distance(stemmed_word, reason) for reason in reasons)
                 if min_distance <= 3:
@@ -115,10 +115,10 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
             matching_words_count = len(matching_words)
             
             # Zjištění, zda je text podobný negativním trénovacím datům
-            similar_to_negative_data = any(levenshtein_distance(data_ano[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 3 for row in data_ne)
+            similar_to_negative_data = any(levenshtein_distance(data_yes[i]['duvod_o_azyl'].lower(), row['duvod_o_azyl'].lower()) <= 3 for row in data_no)
             
             # Vyhodnocení úspěšnosti žádosti na základě nových kritérií
-            if y_pred[i] == 0 or similar_to_negative_data:
+            if y_predicted[i] == 0 or similar_to_negative_data:
                 success_rate = 0  # Klasifikátor předpověděl negativní výsledek nebo data jsou podobná negativním trénovacím datům -> 0%
             elif similar_to_training:
                 success_rate = 70  # Data jsou shodná nebo podobná pozitivním trénovacím datům -> 70%
@@ -142,7 +142,7 @@ def evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, tra
 
     return success_rates
 
-def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_file, reason_file, stopwords_file, country):
+def process_and_evaluate_applications(train_yes_file, train_no_file, test_data_file, reason_file, stopwords_file, country):
     stopwords = load_stopwords(stopwords_file)
     reasons = load_reasons(reason_file)
     
@@ -150,7 +150,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     matching_counts, similar_words = {}, {}
 
     # Zpracování trénovacích dat pro danou zemi
-    with open(train_ano_file, 'r', encoding='utf-8') as csvfile:
+    with open(train_yes_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             if row['statni_prislusnost'].lower() == country.lower():
@@ -162,7 +162,7 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
                 abbreviations_train.append(abbreviation)
                 matching_counts[abbreviation] = len(re.findall(r'\b\w+\b', text))
     
-    with open(train_ne_file, 'r', encoding='utf-8') as csvfile:
+    with open(train_no_file, 'r', encoding='utf-8') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             if row['statni_prislusnost'].lower() == country.lower():
@@ -197,15 +197,15 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     # Klasifikace žádostí
     clf = MultinomialNB()
     clf.fit(X_train_vec, y_train)
-    y_pred = clf.predict(X_test_vec)
-    print(y_pred)
+    y_predicted = clf.predict(X_test_vec)
+    print(y_predicted)
     
     # Vyhodnocení klasifikace
-    evaluate_classification(y_test, y_pred)
+    evaluate_classification(y_test, y_predicted)
 
     # Vyhodnocení úspěšnosti žádostí
     print(f"\n{'=' * 20} {country.upper()} {'=' * 20}")
-    success_rates = evaluate_application(y_test, y_pred, abbreviations_test, train_ano_file, train_ne_file, reasons, matching_counts)
+    success_rates = evaluate_application(y_test, y_predicted, abbreviations_test, train_yes_file, train_no_file, reasons, matching_counts)
     for abbreviation in success_rates:
         average_success_rate = sum(success_rates[abbreviation]) / len(success_rates[abbreviation])
         print(f"{abbreviation.upper()} - {average_success_rate:.2f}%")
@@ -229,14 +229,14 @@ def process_and_evaluate_applications(train_ano_file, train_ne_file, test_data_f
     plot_success_failure_by_country(success_rates)
 
 # File paths
-train_syrie_ano_file = "zadostSyrieAno.csv"
-train_syrie_ne_file = "zadostSyrieNe.csv"
-train_irak_ano_file = "zadostIrakAno.csv"
-train_tunis_ano_file = "zadostTunisAno.csv"
-train_afghanistan_ano_file = "zadostAfghanistanAno.csv"
-train_irak_ne_file = "zadostIrakNe.csv"
-train_tunis_ne_file = "zadostTunisNe.csv"
-train_afghanistan_ne_file = "zadostAfghanistanNe.csv"
+train_syrie_yes_file = "zadostSyrieAno.csv"
+train_syrie_no_file = "zadostSyrieNe.csv"
+train_irak_yes_file = "zadostIrakAno.csv"
+train_tunis_yes_file = "zadostTunisAno.csv"
+train_afghanistan_yes_file = "zadostAfghanistanAno.csv"
+train_irak_no_file = "zadostIrakNe.csv"
+train_tunis_no_file = "zadostTunisNe.csv"
+train_afghanistan_no_file = "zadostAfghanistanNe.csv"
 test_data_file = "testovaciDataF.csv"
 reason_syrie_file = "syrie.txt"
 reason_irak_file = "irak.txt"
@@ -246,10 +246,10 @@ stopwords_file = "stopwords-cs.json"
 
 ### Zpracování a vyhodnocení žádostí
 # Volání funkce pro Syrii
-process_and_evaluate_applications(train_syrie_ano_file, train_syrie_ne_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
+process_and_evaluate_applications(train_syrie_yes_file, train_syrie_no_file, test_data_file, reason_syrie_file, stopwords_file, "sýrie")
 # Volání funkce pro Irák
-process_and_evaluate_applications(train_irak_ano_file, train_irak_ne_file, test_data_file, reason_irak_file, stopwords_file, "irák")
+process_and_evaluate_applications(train_irak_yes_file, train_irak_no_file, test_data_file, reason_irak_file, stopwords_file, "irák")
 # Volání funkce pro Tunisko
-process_and_evaluate_applications(train_tunis_ano_file, train_tunis_ne_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
+process_and_evaluate_applications(train_tunis_yes_file, train_tunis_no_file, test_data_file, reason_tunis_file, stopwords_file, "tunis")
 # Volání funkce pro Afghánistán
-process_and_evaluate_applications(train_afghanistan_ano_file, train_afghanistan_ne_file, test_data_file, reason_afghanistan_file, stopwords_file, "afghánistán")
+process_and_evaluate_applications(train_afghanistan_yes_file, train_afghanistan_no_file, test_data_file, reason_afghanistan_file, stopwords_file, "afghánistán")
